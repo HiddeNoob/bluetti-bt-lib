@@ -42,13 +42,13 @@ class DeviceWriter:
         available_fields = [f.name for f in self.bluetti_device.fields]
         if field not in available_fields:
             self.logger.error("Field not supported")
-            return
+            return False
 
         command = self.bluetti_device.build_write_command(field, value)
 
         if command is None:
             self.logger.error("Field is not writeable")
-            return
+            return False
 
         self.logger.debug("Writing to device register")
 
@@ -85,16 +85,17 @@ class DeviceWriter:
                     await self.client.write_gatt_char(WRITE_UUID, command_bytes)
 
                     self.logger.debug("Write successful")
+                    return True
 
             except TimeoutError:
                 self.logger.warning("Timeout")
-                return None
+                return False
             except BleakError as err:
                 self.logger.warning("Bleak error: %s", err)
-                return None
+                return False
             except BaseException as err:
                 self.logger.warning("Unknown error: %s", err)
-                return None
+                return False
             finally:
                 if self.has_notifier:
                     try:
